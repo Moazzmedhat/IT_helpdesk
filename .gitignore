@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.angular/
+
+# Environment and secrets (Never commit real secrets)
+.env
+server/.env
+*.local
+
+# Database & local uploads
+server/uploads/
+uploads/
+postgres_data/
+minio_data/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
