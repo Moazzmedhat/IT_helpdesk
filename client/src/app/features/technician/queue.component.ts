@@ -217,7 +217,7 @@ import { Ticket, Category } from '../../core/models';
                     BEING WORKED ON BY {{ t.assignedTo.fullName }}
                   </span>
                   <span *ngIf="t.assignedTo && t.assignedTo.id !== authService.currentUser?.id && t.status === 'PENDING'" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
-                    PENDING ({{ t.assignedTo?.fullName }})
+                    PENDING ({{ t.assignedTo.fullName }})
                   </span>
                   <span *ngIf="t.status === 'RESOLVED' && t.assignedTo?.id !== authService.currentUser?.id" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider">
                     RESOLVED

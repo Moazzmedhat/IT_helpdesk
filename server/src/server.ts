@@ -16,5 +16,4 @@ if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
   });
 }
 
-export { app, server };
 export default app;
