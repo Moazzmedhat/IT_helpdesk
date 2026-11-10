@@ -34,7 +34,7 @@ export class AuthController {
   }
 
   async getDevUsers(req: Request, res: Response) {
-    if (config.AUTH_MODE !== 'dev' || config.NODE_ENV === 'production') {
+    if (config.AUTH_MODE !== 'dev' || (config.NODE_ENV === 'production' && process.env.ALLOW_DEV_AUTH !== 'true')) {
       return res.status(403).json({ error: 'Forbidden', message: 'Dev auth is disabled' });
     }
 
@@ -55,7 +55,7 @@ export class AuthController {
   }
 
   async devLogin(req: Request, res: Response) {
-    if (config.AUTH_MODE !== 'dev' || config.NODE_ENV === 'production') {
+    if (config.AUTH_MODE !== 'dev' || (config.NODE_ENV === 'production' && process.env.ALLOW_DEV_AUTH !== 'true')) {
       return res.status(403).json({ error: 'Forbidden', message: 'Dev auth is disabled' });
     }
 
