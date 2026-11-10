@@ -8,17 +8,30 @@ if (!dbUrl.includes('connection_limit')) {
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    datasources: {
-      db: {
-        url: dbUrl,
-      },
-    },
-    log: config.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-  });
+let prismaInstance: PrismaClient;
 
-if (process.env.NODE_ENV !== 'production' || process.env.VERCEL === '1') {
-  globalForPrisma.prisma = prisma;
+try {
+  prismaInstance =
+    globalForPrisma.prisma ||
+    new PrismaClient({
+      datasources: {
+        db: {
+          url: dbUrl,
+        },
+      },
+      log: config.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+    });
+
+  if (process.env.NODE_ENV !== 'production' || process.env.VERCEL === '1') {
+    globalForPrisma.prisma = prismaInstance;
+  }
+} catch (e) {
+  console.error('CRITICAL: Failed to instantiate PrismaClient:', e);
+  prismaInstance = new Proxy({} as PrismaClient, {
+    get(target, prop) {
+      return () => Promise.reject(new Error(`PrismaClient failed to initialize: ${(e as Error)?.message || e}`));
+    },
+  });
 }
+
+export const prisma = prismaInstance;

@@ -115,8 +115,8 @@ export function createApp(): Express {
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error('Unhandled Application Error:', err);
     res.status(500).json({
-      error: 'Internal Server Error',
-      message: config.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
+      error: err.name || 'Internal Server Error',
+      message: err.message || 'An unexpected error occurred',
     });
   });
 
