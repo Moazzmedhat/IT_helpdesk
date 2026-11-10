@@ -15,9 +15,14 @@ export class S3StorageService implements IStorageService {
   private localFallbackDir: string;
 
   constructor() {
-    this.localFallbackDir = path.resolve(process.cwd(), 'uploads_fallback');
-    if (!fs.existsSync(this.localFallbackDir)) {
-      fs.mkdirSync(this.localFallbackDir, { recursive: true });
+    const baseDir = process.env.VERCEL ? '/tmp' : process.cwd();
+    this.localFallbackDir = path.resolve(baseDir, 'uploads_fallback');
+    try {
+      if (!fs.existsSync(this.localFallbackDir)) {
+        fs.mkdirSync(this.localFallbackDir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('Could not create localFallbackDir:', e);
     }
 
     if (config.S3_ENDPOINT) {
