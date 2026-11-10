@@ -1,0 +1,35 @@
+{
+  "name": "it-helpdesk-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "postinstall": "npm run --prefix server prisma:generate",
+    "build:client": "npm run --prefix client build",
+    "build:server": "npm run --prefix server build",
+    "build": "npm run build:client && npm run build:server"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "file-type": "^16.5.4",
+    "helmet": "^7.1.0",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.7.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "typescript": "^5.5.2"
+  }
+}

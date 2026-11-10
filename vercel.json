@@ -7,8 +7,7 @@
     },
     "server": {
       "root": "server",
-      "framework": "express",
-      "entrypoint": "src/server.ts"
+      "framework": "express"
     }
   },
   "rewrites": [

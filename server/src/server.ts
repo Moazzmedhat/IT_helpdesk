@@ -1,6 +1,4 @@
-import { createApp } from './app';
-
-const app = createApp();
+import app from './app';
 
 // In Vercel serverless, we don't need http.createServer() or Socket.IO.
 // Those are only for the local dev/standalone server.
