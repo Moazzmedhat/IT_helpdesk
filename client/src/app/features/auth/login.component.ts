@@ -31,6 +31,10 @@ import { User } from '../../core/models';
             <p class="text-xs text-slate-500">Local development authentication is active. Choose an identity below:</p>
           </div>
 
+          <div *ngIf="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded text-xs">
+            {{ errorMessage }}
+          </div>
+
           <div *ngIf="loading" class="text-center py-6 text-sm text-slate-500">
             Loading identities...
           </div>
@@ -75,15 +79,17 @@ export class LoginComponent implements OnInit {
 
   users: User[] = [];
   loading = true;
+  errorMessage: string | null = null;
 
   ngOnInit() {
     this.authService.getDevUsers().subscribe({
       next: (res) => {
-        this.users = res.users;
+        this.users = res.users || [];
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
+        this.errorMessage = err?.error?.message || 'Failed to load user personas from backend. Ensure API is reachable.';
       }
     });
   }

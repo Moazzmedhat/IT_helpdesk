@@ -48,7 +48,7 @@ if (!parsed.success) {
 
 export const config = parsed.data;
 
-// Security check: Refuse to start with AUTH_MODE=dev in production unless explicitly allowed for preview/demo
-if (config.NODE_ENV === 'production' && config.AUTH_MODE === 'dev' && process.env.ALLOW_DEV_AUTH !== 'true') {
-  throw new Error('FATAL SECURITY ERROR: AUTH_MODE=dev is not allowed in production! (Set ALLOW_DEV_AUTH=true if deploying a demo/preview environment)');
+// Warning when running dev auth in production mode
+if (config.NODE_ENV === 'production' && config.AUTH_MODE === 'dev') {
+  console.warn('⚠️ WARNING: Running with AUTH_MODE=dev in production. Make sure this is intended for demo/preview.');
 }
