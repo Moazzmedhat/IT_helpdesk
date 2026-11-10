@@ -1,9 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription, interval } from 'rxjs';
 import { TicketService } from '../../core/services/ticket.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { Ticket, Comment, Attachment } from '../../core/models';
 
 @Component({
@@ -270,10 +272,13 @@ import { Ticket, Comment, Attachment } from '../../core/models';
     </div>
   `
 })
-export class TicketDetailComponent implements OnInit {
+export class TicketDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private ticketService = inject(TicketService);
+  private realtimeService = inject(RealtimeService);
   public authService = inject(AuthService);
+
+  private subscriptions: Subscription[] = [];
 
   ticket: Ticket | null = null;
   comments: Comment[] = [];
@@ -288,7 +293,32 @@ export class TicketDetailComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadTicket(id);
+
+      // Real-time WebSocket event listener
+      const socketSub = this.realtimeService.ticketEvents$.subscribe((evt) => {
+        if (!this.ticket) return;
+        if (evt.event === 'comment:added' && evt.payload?.ticketId === this.ticket.id) {
+          this.loadComments(this.ticket.id);
+        }
+        if ((evt.event === 'ticket:status_changed' || evt.event === 'ticket:claimed') && evt.payload?.id === this.ticket.id) {
+          this.loadTicket(this.ticket.id);
+        }
+      });
+      this.subscriptions.push(socketSub);
+
+      // Fallback polling every 5 seconds to ensure real-time sync in serverless/drop environments
+      const pollSub = interval(5000).subscribe(() => {
+        if (this.ticket && !this.sendingComment) {
+          this.loadComments(this.ticket.id);
+        }
+      });
+      this.subscriptions.push(pollSub);
     }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions = [];
   }
 
   loadTicket(id: string) {

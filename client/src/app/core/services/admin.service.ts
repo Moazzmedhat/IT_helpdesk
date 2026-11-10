@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { User, Setting, AuditLog } from '../models';
+import { User, Setting, AuditLog, Department, Branch, Role } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -25,12 +25,49 @@ export class AdminService {
     return this.http.get<{ users: User[] }>('/api/admin/users');
   }
 
+  createUser(payload: {
+    email: string;
+    fullName: string;
+    role: Role;
+    departmentId?: string | null;
+    branchId?: string | null;
+    isActive?: boolean;
+  }): Observable<{ success: boolean; user: User }> {
+    return this.http.post<{ success: boolean; user: User }>('/api/admin/users', payload);
+  }
+
+  updateUser(
+    id: string,
+    payload: {
+      fullName?: string;
+      email?: string;
+      role?: Role;
+      departmentId?: string | null;
+      branchId?: string | null;
+      isActive?: boolean;
+    }
+  ): Observable<{ success: boolean; user: User }> {
+    return this.http.put<{ success: boolean; user: User }>(`/api/admin/users/${id}`, payload);
+  }
+
+  deleteUser(id: string): Observable<{ success: boolean; message: string; deactivated?: boolean; user?: User }> {
+    return this.http.delete<{ success: boolean; message: string; deactivated?: boolean; user?: User }>(`/api/admin/users/${id}`);
+  }
+
   updateUserRole(id: string, role: string): Observable<{ success: boolean; user: User }> {
     return this.http.patch<{ success: boolean; user: User }>(`/api/admin/users/${id}/role`, { role });
   }
 
   toggleUserActive(id: string): Observable<{ success: boolean; user: User }> {
     return this.http.patch<{ success: boolean; user: User }>(`/api/admin/users/${id}/toggle-active`, {});
+  }
+
+  getDepartments(): Observable<{ departments: Department[] }> {
+    return this.http.get<{ departments: Department[] }>('/api/admin/departments');
+  }
+
+  getBranches(): Observable<{ branches: Branch[] }> {
+    return this.http.get<{ branches: Branch[] }>('/api/admin/branches');
   }
 
   getAuditLogs(params: { action?: string; limit?: number; offset?: number }): Observable<{ success: boolean; logs: AuditLog[]; total: number }> {
