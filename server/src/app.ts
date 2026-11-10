@@ -29,9 +29,25 @@ export function createApp(): Express {
     crossOriginResourcePolicy: { policy: "cross-origin" }
   }));
 
-  // CORS
+  // CORS: Support local dev, configured CLIENT_URL, and Vercel deployment domains
+  const isAllowedOrigin = (origin?: string): boolean => {
+    if (!origin) return true; // Same-origin, serverless internal, curl, Postman
+    if (origin === config.CLIENT_URL) return true;
+    if (origin.endsWith('.vercel.app')) return true;
+    if (process.env.VERCEL_URL && origin.includes(process.env.VERCEL_URL)) return true;
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL && origin.includes(process.env.VERCEL_PROJECT_PRODUCTION_URL)) return true;
+    if (config.NODE_ENV !== 'production') return true;
+    return false;
+  };
+
   app.use(cors({
-    origin: config.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With']
@@ -58,8 +74,18 @@ export function createApp(): Express {
   app.use('/api/reports', reportRouter);
   app.use('/api/admin', adminRouter);
 
-  // Health Check Endpoint
+  // Health Check Endpoints
   app.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({
+      status: 'UP',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      environment: config.NODE_ENV,
+      authMode: config.AUTH_MODE
+    });
+  });
+
+  app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({
       status: 'UP',
       uptime: process.uptime(),

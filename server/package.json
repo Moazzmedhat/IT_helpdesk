@@ -4,7 +4,7 @@
   "description": "Production-grade internal IT Help Desk and Ticketing System Backend",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "prisma:generate": "prisma generate",

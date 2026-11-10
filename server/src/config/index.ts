@@ -6,12 +6,19 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number).default('3000'),
-  CLIENT_URL: z.string().default('http://localhost:4200'),
+  CLIENT_URL: z.string().default(
+    process.env.CLIENT_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` :
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:4200'))
+  ),
   DATABASE_URL: z.string().default('postgresql://postgres:postgres@localhost:5432/helpdesk?schema=public'),
   AUTH_MODE: z.enum(['dev', 'oidc']).default('dev'),
   SESSION_SECRET: z.string().min(16).default('it-helpdesk-session-secret-key-32-chars-long'),
   COOKIE_DOMAIN: z.string().default('localhost'),
-  COOKIE_SECURE: z.string().transform(v => v === 'true').default('false'),
+  COOKIE_SECURE: z.string().optional().transform(v => {
+    if (v !== undefined) return v === 'true';
+    return process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  }),
 
   // OIDC
   OIDC_ISSUER_URL: z.string().optional(),
@@ -41,7 +48,7 @@ if (!parsed.success) {
 
 export const config = parsed.data;
 
-// Security check: Refuse to start with AUTH_MODE=dev in production
-if (config.NODE_ENV === 'production' && config.AUTH_MODE === 'dev') {
-  throw new Error('FATAL SECURITY ERROR: AUTH_MODE=dev is not allowed in production!');
+// Security check: Refuse to start with AUTH_MODE=dev in production unless explicitly allowed for preview/demo
+if (config.NODE_ENV === 'production' && config.AUTH_MODE === 'dev' && process.env.ALLOW_DEV_AUTH !== 'true') {
+  throw new Error('FATAL SECURITY ERROR: AUTH_MODE=dev is not allowed in production! (Set ALLOW_DEV_AUTH=true if deploying a demo/preview environment)');
 }

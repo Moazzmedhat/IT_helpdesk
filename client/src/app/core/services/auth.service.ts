@@ -59,6 +59,11 @@ export class AuthService {
     );
   }
 
+  clearLocalAuth(): void {
+    this.currentUserSubject.next(null);
+    this.csrfToken = null;
+  }
+
   logout(): Observable<any> {
     return this.http.post<any>('/api/auth/logout', {}, { withCredentials: true }).pipe(
       tap(() => {
