@@ -1,8 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription, interval } from 'rxjs';
 import { TicketService } from '../../core/services/ticket.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { Ticket } from '../../core/models';
 
 @Component({
@@ -164,8 +166,11 @@ import { Ticket } from '../../core/models';
     </div>
   `
 })
-export class MyTicketsComponent implements OnInit {
+export class MyTicketsComponent implements OnInit, OnDestroy {
   private ticketService = inject(TicketService);
+  private realtimeService = inject(RealtimeService);
+
+  private subscriptions: Subscription[] = [];
 
   tickets: Ticket[] = [];
   loading = true;
@@ -174,11 +179,32 @@ export class MyTicketsComponent implements OnInit {
   selectedPriority = '';
 
   ngOnInit() {
-    this.loadTickets();
+    this.loadTickets(true);
+
+    // Live socket listener
+    const socketSub = this.realtimeService.ticketEvents$.subscribe((evt) => {
+      if (['ticket:created', 'ticket:claimed', 'ticket:status_changed'].includes(evt.event)) {
+        this.loadTickets(false);
+      }
+    });
+    this.subscriptions.push(socketSub);
+
+    // Fallback polling every 5 seconds
+    const pollSub = interval(5000).subscribe(() => {
+      this.loadTickets(false);
+    });
+    this.subscriptions.push(pollSub);
   }
 
-  loadTickets() {
-    this.loading = true;
+  ngOnDestroy() {
+    this.subscriptions.forEach(s => s.unsubscribe());
+    this.subscriptions = [];
+  }
+
+  loadTickets(showLoading = true) {
+    if (showLoading) {
+      this.loading = true;
+    }
     this.ticketService.listTickets({
       search: this.search,
       status: this.selectedStatus || undefined,

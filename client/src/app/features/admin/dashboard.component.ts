@@ -1,7 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
 import { AdminService } from '../../core/services/admin.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -104,11 +106,35 @@ import { AdminService } from '../../core/services/admin.service';
     </div>
   `
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   private adminService = inject(AdminService);
+  private realtimeService = inject(RealtimeService);
+
+  private subscriptions: Subscription[] = [];
   data: any = null;
 
   ngOnInit() {
+    this.loadData();
+
+    const socketSub = this.realtimeService.ticketEvents$.subscribe((evt) => {
+      if (['ticket:created', 'ticket:claimed', 'ticket:status_changed'].includes(evt.event)) {
+        this.loadData();
+      }
+    });
+    this.subscriptions.push(socketSub);
+
+    const pollSub = interval(10000).subscribe(() => {
+      this.loadData();
+    });
+    this.subscriptions.push(pollSub);
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(s => s.unsubscribe());
+    this.subscriptions = [];
+  }
+
+  loadData() {
     this.adminService.getDashboardReports().subscribe({
       next: (res) => {
         this.data = res.data;

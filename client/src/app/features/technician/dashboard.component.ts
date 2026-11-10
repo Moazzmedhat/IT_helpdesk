@@ -1,8 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
 import { TicketService } from '../../core/services/ticket.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { Ticket } from '../../core/models';
 
 @Component({
@@ -131,9 +133,12 @@ import { Ticket } from '../../core/models';
     </div>
   `
 })
-export class TechnicianDashboardComponent implements OnInit {
+export class TechnicianDashboardComponent implements OnInit, OnDestroy {
   public authService = inject(AuthService);
   private ticketService = inject(TicketService);
+  private realtimeService = inject(RealtimeService);
+
+  private subscriptions: Subscription[] = [];
 
   availableCount = 0;
   myActiveCount = 0;
@@ -143,11 +148,30 @@ export class TechnicianDashboardComponent implements OnInit {
   loading = true;
 
   ngOnInit() {
-    this.loadStats();
+    this.loadStats(true);
+
+    const socketSub = this.realtimeService.ticketEvents$.subscribe((evt) => {
+      if (['ticket:created', 'ticket:claimed', 'ticket:status_changed'].includes(evt.event)) {
+        this.loadStats(false);
+      }
+    });
+    this.subscriptions.push(socketSub);
+
+    const pollSub = interval(5000).subscribe(() => {
+      this.loadStats(false);
+    });
+    this.subscriptions.push(pollSub);
   }
 
-  loadStats() {
-    this.loading = true;
+  ngOnDestroy() {
+    this.subscriptions.forEach(s => s.unsubscribe());
+    this.subscriptions = [];
+  }
+
+  loadStats(showLoading = true) {
+    if (showLoading) {
+      this.loading = true;
+    }
     this.ticketService.listTickets({ queueTab: 'available', limit: 5 }).subscribe({
       next: (res) => {
         this.availableTickets = res.tickets;
