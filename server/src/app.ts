@@ -111,6 +111,36 @@ export function createApp(): Express {
     res.status(200).json({ message: 'IT Helpdesk API active' });
   });
 
+  // Diagnostic endpoint — shows runtime info without DB calls
+  app.get('/api/debug', (req: Request, res: Response) => {
+    let prismaStatus = 'unknown';
+    try {
+      const pc = require('@prisma/client');
+      prismaStatus = pc ? 'module loaded' : 'module null';
+    } catch (e: any) {
+      prismaStatus = `import failed: ${e.message}`;
+    }
+
+    let dbUrlPresent = 'missing';
+    try {
+      dbUrlPresent = process.env.DATABASE_URL ? `present (${process.env.DATABASE_URL.substring(0, 30)}...)` : 'missing';
+    } catch {}
+
+    res.status(200).json({
+      status: 'debug',
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      vercel: process.env.VERCEL || 'not set',
+      nodeEnv: process.env.NODE_ENV || 'not set',
+      authMode: process.env.AUTH_MODE || 'not set',
+      databaseUrl: dbUrlPresent,
+      prismaStatus,
+      cwd: process.cwd(),
+      memoryMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+    });
+  });
+
   // Global Error Handler
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error('Unhandled Application Error:', err);
