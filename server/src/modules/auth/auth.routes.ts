@@ -6,10 +6,11 @@ import { authenticate, requireRole } from '../../middleware/auth.middleware';
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  max: 100,
   message: { error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 const router = Router();

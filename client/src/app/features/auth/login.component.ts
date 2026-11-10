@@ -89,17 +89,23 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || 'Failed to load user personas from backend. Ensure API is reachable.';
+        const status = err?.status;
+        const details = err?.error?.message || err?.statusText || (status === 0 ? 'Network/CORS error' : 'Server error');
+        this.errorMessage = `Failed to load user personas (HTTP ${status ?? 'unknown'}: ${details}).`;
       }
     });
   }
 
   login(email: string) {
+    this.errorMessage = null;
     this.authService.devLogin(email).subscribe({
       next: (res) => {
         if (res.user.role === 'EMPLOYEE') this.router.navigate(['/employee/dashboard']);
         else if (res.user.role === 'TECHNICIAN') this.router.navigate(['/technician/dashboard']);
         else if (res.user.role === 'ADMIN') this.router.navigate(['/admin/dashboard']);
+      },
+      error: (err) => {
+        this.errorMessage = `Sign in failed (HTTP ${err?.status}): ${err?.error?.message || err?.statusText || 'Unable to authenticate'}`;
       }
     });
   }

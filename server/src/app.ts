@@ -16,6 +16,9 @@ import { adminRouter } from './modules/admin/admin.routes';
 export function createApp(): Express {
   const app = express();
 
+  // Trust proxy headers from Vercel / reverse proxies
+  app.set('trust proxy', 1);
+
   // Security Headers
   app.use(helmet({
     contentSecurityPolicy: {
@@ -64,15 +67,23 @@ export function createApp(): Express {
   // Optional authentication on all routes to populate req.user if session cookie is present
   app.use(optionalAuthenticate);
 
-  // API Routes
+  // API Routes (support both /api/... and direct /... for Vercel service rewrites)
   app.use('/api/auth', authRouter);
+  app.use('/auth', authRouter);
   app.use('/api/tickets/:ticketId/comments', commentRouter);
+  app.use('/tickets/:ticketId/comments', commentRouter);
   app.use('/api/tickets/:ticketId/attachments', attachmentRouter);
+  app.use('/tickets/:ticketId/attachments', attachmentRouter);
   app.use('/api/attachments', attachmentRouter);
+  app.use('/attachments', attachmentRouter);
   app.use('/api/tickets', ticketRouter);
+  app.use('/tickets', ticketRouter);
   app.use('/api/notifications', notificationRouter);
+  app.use('/notifications', notificationRouter);
   app.use('/api/reports', reportRouter);
+  app.use('/reports', reportRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/admin', adminRouter);
 
   // Health Check Endpoints
   app.get('/health', (req: Request, res: Response) => {
