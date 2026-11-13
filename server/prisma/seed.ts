@@ -226,7 +226,126 @@ async function main() {
     });
   }
 
-  console.log('Seed completed successfully.');
+  // 7. Seed Tickets & Operational History
+  const seededUsers = await prisma.user.findMany();
+  const userMap = new Map(seededUsers.map(u => [u.email, u.id]));
+  const categoriesList = await prisma.category.findMany();
+  const catLookup = new Map(categoriesList.map(c => [c.name, c.id]));
+
+  const sampleTickets = [
+    {
+      ticketNumber: 'TKT-2026-0001',
+      title: 'Bloomberg FX Dealing Terminal Latency & Feed Stalling',
+      description: 'Experiencing intermittent 3-5 second freezes on EUR/USD tick updates during high-volatility sessions.',
+      requesterEmail: 'emp1@currencyexchange.local',
+      assignedEmail: 'tech1@currencyexchange.local',
+      deptCode: 'FXT',
+      branchCode: 'HO-DXB',
+      categoryName: 'Software',
+      priority: PriorityLevel.CRITICAL,
+      status: 'IN_PROGRESS' as any,
+      claimedAt: new Date(Date.now() - 3 * 3600 * 1000),
+      createdAt: new Date(Date.now() - 4 * 3600 * 1000),
+    },
+    {
+      ticketNumber: 'TKT-2026-0002',
+      title: 'Branch Vault POS Receipt Thermal Printer Jamming',
+      description: 'Counter 2 receipt printer continuously reporting paper jam despite clearing path. Need urgent inspection.',
+      requesterEmail: 'emp2@currencyexchange.local',
+      assignedEmail: 'tech2@currencyexchange.local',
+      deptCode: 'CSH',
+      branchCode: 'BR-DXB-T1',
+      categoryName: 'Printers and Scanners',
+      priority: PriorityLevel.HIGH,
+      status: 'RESOLVED' as any,
+      claimedAt: new Date(Date.now() - 5 * 3600 * 1000),
+      resolvedAt: new Date(Date.now() - 1 * 3600 * 1000),
+      createdAt: new Date(Date.now() - 6 * 3600 * 1000),
+    },
+    {
+      ticketNumber: 'TKT-2026-0003',
+      title: 'Sanctions & AML Watchlist Screening Tool API Timeout',
+      description: 'Compliance system getting 504 Gateway Timeout when executing batch screening against UN sanctions list.',
+      requesterEmail: 'emp3@currencyexchange.local',
+      assignedEmail: 'tech3@currencyexchange.local',
+      deptCode: 'AML',
+      branchCode: 'BR-DWN',
+      categoryName: 'Software',
+      priority: PriorityLevel.HIGH,
+      status: 'OPEN' as any,
+      createdAt: new Date(Date.now() - 10 * 3600 * 1000),
+    },
+    {
+      ticketNumber: 'TKT-2026-0004',
+      title: 'Workstation Display Port Flicker on Dealing Desk 4',
+      description: 'Secondary portrait monitor goes black randomly when adjusting tilt.',
+      requesterEmail: 'emp1@currencyexchange.local',
+      assignedEmail: 'tech1@currencyexchange.local',
+      deptCode: 'FXT',
+      branchCode: 'HO-DXB',
+      categoryName: 'Hardware',
+      priority: PriorityLevel.MEDIUM,
+      status: 'CLOSED' as any,
+      claimedAt: new Date(Date.now() - 24 * 3600 * 1000),
+      resolvedAt: new Date(Date.now() - 20 * 3600 * 1000),
+      closedAt: new Date(Date.now() - 18 * 3600 * 1000),
+      createdAt: new Date(Date.now() - 26 * 3600 * 1000),
+    },
+    {
+      ticketNumber: 'TKT-2026-0005',
+      title: 'Branch Secure VPN Tunnel Failover Route Check',
+      description: 'Downtown branch failover line testing required ahead of weekend banking sync.',
+      requesterEmail: 'emp3@currencyexchange.local',
+      assignedEmail: 'tech2@currencyexchange.local',
+      deptCode: 'AML',
+      branchCode: 'BR-DWN',
+      categoryName: 'Network and Internet',
+      priority: PriorityLevel.LOW,
+      status: 'RESOLVED' as any,
+      claimedAt: new Date(Date.now() - 14 * 3600 * 1000),
+      resolvedAt: new Date(Date.now() - 8 * 3600 * 1000),
+      createdAt: new Date(Date.now() - 16 * 3600 * 1000),
+    },
+  ];
+
+  for (const st of sampleTickets) {
+    const reqId = userMap.get(st.requesterEmail);
+    const assignId = st.assignedEmail ? userMap.get(st.assignedEmail) : null;
+    const deptId = departmentsMap[st.deptCode];
+    const brId = branchesMap[st.branchCode];
+    const catId = catLookup.get(st.categoryName);
+
+    if (reqId && deptId && brId && catId) {
+      await prisma.ticket.upsert({
+        where: { ticketNumber: st.ticketNumber },
+        update: {},
+        create: {
+          ticketNumber: st.ticketNumber,
+          title: st.title,
+          description: st.description,
+          requesterId: reqId,
+          assignedToId: assignId,
+          departmentId: deptId,
+          branchId: brId,
+          categoryId: catId,
+          priority: st.priority,
+          status: st.status,
+          claimedAt: st.claimedAt || null,
+          resolvedAt: st.resolvedAt || null,
+          closedAt: (st as any).closedAt || null,
+          createdAt: st.createdAt,
+        },
+      });
+    }
+  }
+
+  await prisma.yearSequence.upsert({
+    where: { year: 2026 },
+    update: { lastNumber: 5 },
+    create: { year: 2026, lastNumber: 5 },
+  });
+
+  console.log('Seed completed successfully with realistic tickets and operational metrics.');
 }
 
 main()
